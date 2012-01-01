@@ -8,8 +8,8 @@ XML<br>\
   <li><a href="documentation/index.html">Documentation</a></li>\
   <li><a href="https://github.com/michaelrsweet/Mini-XML/downloads">Download</a></li>\
   <li><a href="https://github.com/michaelrsweet/Mini-XML/issues">Issues</a></li>\
+  <li><a href="https://github.com/michaelrsweet/Mini-XML/wiki/News">News/Wiki</a></li>\
   <li><a href="https://github.com/michaelrsweet/Mini-XML">Repository</a></li>\
-  <li><a href="https://github.com/michaelrsweet/Mini-XML/wiki">Wiki</a></li>\
 </ul>';
 
   if (document.anchors.length > 0)
