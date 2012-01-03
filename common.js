@@ -15,12 +15,13 @@ XML<br>\
 
   if (document.anchors.length > 0)
   {
-    contents = contents + '\n<p>This Page:</p>\n<ul>\n';
+    contents = contents + '\n<li id="sideheading">This Page</li>';
     for (i = 0; i < document.anchors.length; i ++)
-      contents = contents + '  <li><a href="#' + document.anchors[i].name +
-                 '">' + document.anchors[i].innerHTML + '</a></li>\n';
-    contents = contents + '</ul>';
+      contents = contents + '\n  <li><a href="#' + document.anchors[i].name +
+                 '">' + document.anchors[i].innerHTML + '</a></li>';
   }
+
+  contents = contents + '\n</ul>';
 
   document.getElementById('sidebar').innerHTML = contents;
 }
