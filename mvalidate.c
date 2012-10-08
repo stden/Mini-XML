@@ -30,11 +30,10 @@
  * 'main()' - Main entry for schema validation program.
  */
 
-int					/* O - Exit status */
-main(int  argc,				/* I - Number of command-line args */
-     char *argv[])			/* I - Command-line args */
-{
-  return (0);
+int                 /* O - Exit status */
+main(int  argc,             /* I - Number of command-line args */
+     char* argv[]) {        /* I - Command-line args */
+    return (0);
 }
 
 
