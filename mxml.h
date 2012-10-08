@@ -1,6 +1,4 @@
 /*
- * "$Id$"
- *
  * Header file for Mini-XML, a small XML-like file parsing library.
  *
  * Copyright 2003-2011 by Michael R Sweet.
@@ -322,8 +320,3 @@ extern mxml_type_t	mxml_real_cb(mxml_node_t *node);
 }
 #  endif /* __cplusplus */
 #endif /* !_mxml_h_ */
-
-
-/*
- * End of "$Id$".
- */

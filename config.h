@@ -1,6 +1,4 @@
 /*
- * "$Id$"
- *
  * Configuration file for Mini-XML, a small XML-like file parsing library.
  *
  * Copyright 2003-2010 by Michael R Sweet.
@@ -29,7 +27,7 @@
  * Version number...
  */
 
-#define MXML_VERSION	""
+#define MXML_VERSION    ""
 
 
 /*
@@ -73,23 +71,20 @@
  */
 
 #  ifndef HAVE_STRDUP
-extern char	*_mxml_strdup(const char *);
+extern char* _mxml_strdup(const char*);
 #    define strdup _mxml_strdup
 #  endif /* !HAVE_STRDUP */
 
-extern char	*_mxml_strdupf(const char *, ...);
-extern char	*_mxml_vstrdupf(const char *, va_list);
+extern char* _mxml_strdupf(const char*, ...);
+extern char* _mxml_vstrdupf(const char*, va_list);
 
 #  ifndef HAVE_SNPRINTF
-extern int	_mxml_snprintf(char *, size_t, const char *, ...);
+extern int  _mxml_snprintf(char*, size_t, const char*, ...);
 #    define snprintf _mxml_snprintf
 #  endif /* !HAVE_SNPRINTF */
 
 #  ifndef HAVE_VSNPRINTF
-extern int	_mxml_vsnprintf(char *, size_t, const char *, va_list);
+extern int  _mxml_vsnprintf(char*, size_t, const char*, va_list);
 #    define vsnprintf _mxml_vsnprintf
 #  endif /* !HAVE_VSNPRINTF */
 
-/*
- * End of "$Id$".
- */
