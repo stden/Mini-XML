@@ -63,9 +63,10 @@
  * Character encoding...
  */
 
-#define ENCODE_UTF8 0           /* UTF-8 */
+#define ENCODE_UTF8 0           /* UTF-8 - Default encoding */
 #define ENCODE_UTF16BE  1       /* UTF-16 Big-Endian */
 #define ENCODE_UTF16LE  2       /* UTF-16 Little-Endian */
+#define ENCODE_CP866    3       /* CP866 (Russian ASCII) */
 
 
 /*
@@ -95,7 +96,7 @@ typedef struct _mxml_fdbuf_s {      /**** File descriptor buffer ****/
  */
 
 static int      mxml_add_char(int ch, char** ptr, char** buffer,
-                              int* bufsize);
+                              int* bufsize, int xml_encoding);
 static int      mxml_fd_getc(void* p, int* encoding);
 static int      mxml_fd_putc(int ch, void* p);
 static int      mxml_fd_read(_mxml_fdbuf_t* buf);
@@ -112,7 +113,8 @@ static inline int   mxml_isspace(int ch) {
 static mxml_node_t*  mxml_load_data(mxml_node_t* top, void* p,
                                     mxml_load_cb_t cb,
                                     _mxml_getc_cb_t getc_cb,
-                                    mxml_sax_cb_t sax_cb, void* sax_data);
+                                    mxml_sax_cb_t sax_cb, void* sax_data,
+                                    int xml_encoding );
 static int      mxml_parse_element(mxml_node_t* node, void* p,
                                    int* encoding,
                                    _mxml_getc_cb_t getc_cb);
@@ -165,7 +167,7 @@ mxmlLoadFd(mxml_node_t*    top,     /* I - Top node */
      * Read the XML data...
      */
 
-    return (mxml_load_data(top, &buf, cb, mxml_fd_getc, MXML_NO_CALLBACK, NULL));
+    return (mxml_load_data(top, &buf, cb, mxml_fd_getc, MXML_NO_CALLBACK, NULL, ENCODE_UTF8));
 }
 
 
@@ -192,7 +194,22 @@ mxmlLoadFile(mxml_node_t*    top,   /* I - Top node */
      * Read the XML data...
      */
 
-    return (mxml_load_data(top, fp, cb, mxml_file_getc, MXML_NO_CALLBACK, NULL));
+    return (mxml_load_data(top, fp, cb, mxml_file_getc, MXML_NO_CALLBACK, NULL, ENCODE_UTF8));
+}
+
+/*
+ * 'mxmlLoadFileASCII()' - Load a ASCII file into an XML node tree.
+ *
+ */
+mxml_node_t*                /* O - First node or NULL if the file could not be read. */
+mxmlLoadFileASCII(mxml_node_t*    top,   /* I - Top node */
+                  FILE*           fp,    /* I - File to read from */
+                  mxml_load_cb_t cb) {   /* I - Callback function or MXML_NO_CALLBACK */
+    /*
+     * Read the XML data...
+     */
+
+    return (mxml_load_data(top, fp, cb, mxml_file_getc, MXML_NO_CALLBACK, NULL, ENCODE_CP866));
 }
 
 
@@ -219,8 +236,7 @@ mxmlLoadString(mxml_node_t*    top, /* I - Top node */
      * Read the XML data...
      */
 
-    return (mxml_load_data(top, (void*)&s, cb, mxml_string_getc, MXML_NO_CALLBACK,
-                           NULL));
+    return (mxml_load_data(top, (void*)&s, cb, mxml_string_getc, MXML_NO_CALLBACK, NULL, ENCODE_UTF8));
 }
 
 
@@ -477,7 +493,7 @@ mxmlSAXLoadFd(mxml_node_t*    top,  /* I - Top node */
      * Read the XML data...
      */
 
-    return (mxml_load_data(top, &buf, cb, mxml_fd_getc, sax_cb, sax_data));
+    return (mxml_load_data(top, &buf, cb, mxml_fd_getc, sax_cb, sax_data, ENCODE_UTF8));
 }
 
 
@@ -514,7 +530,7 @@ mxmlSAXLoadFile(
      * Read the XML data...
      */
 
-    return (mxml_load_data(top, fp, cb, mxml_file_getc, sax_cb, sax_data));
+    return (mxml_load_data(top, fp, cb, mxml_file_getc, sax_cb, sax_data, ENCODE_UTF8));
 }
 
 
@@ -551,7 +567,7 @@ mxmlSAXLoadString(
      * Read the XML data...
      */
 
-    return (mxml_load_data(top, (void*)&s, cb, mxml_string_getc, sax_cb, sax_data));
+    return (mxml_load_data(top, (void*)&s, cb, mxml_string_getc, sax_cb, sax_data, ENCODE_UTF8));
 }
 
 
@@ -619,7 +635,8 @@ static int              /* O  - 0 on success, -1 on error */
 mxml_add_char(int  ch,          /* I  - Character to add */
               char** bufptr,        /* IO - Current position in buffer */
               char** buffer,        /* IO - Current buffer */
-              int*  bufsize) {      /* IO - Current buffer size */
+              int*  bufsize,        /* IO - Current buffer size */
+              int xml_encoding ) {  /* I - XML encoding */
     char*  newbuffer;         /* New buffer value */
 
 
@@ -644,6 +661,11 @@ mxml_add_char(int  ch,          /* I  - Character to add */
 
         *bufptr = newbuffer + (*bufptr - *buffer);
         *buffer = newbuffer;
+    }
+
+    if(xml_encoding == ENCODE_CP866) {
+        *(*bufptr)++ = ch;
+        return 0;
     }
 
     if (ch < 0x80) {
@@ -1138,6 +1160,10 @@ mxml_file_getc(void* p,         /* I  - Pointer to file */
     }
 
     switch (*encoding) {
+        case ENCODE_CP866:
+            /* Do nothing :) */
+            return ch;
+
         case ENCODE_UTF8 :
 
             /*
@@ -1398,12 +1424,13 @@ mxml_get_entity(mxml_node_t* parent,    /* I  - Parent node */
 
 static mxml_node_t*             /* O - First node or NULL if the file could not be read. */
 mxml_load_data(
-    mxml_node_t*     top,       /* I - Top node */
-    void*            p,         /* I - Pointer to data */
-    mxml_load_cb_t  cb,         /* I - Callback function or MXML_NO_CALLBACK */
-    _mxml_getc_cb_t getc_cb,        /* I - Read function */
-    mxml_sax_cb_t   sax_cb,     /* I - SAX callback or MXML_NO_CALLBACK */
-    void*            sax_data) {    /* I - SAX user data */
+    mxml_node_t*     top,        /* I - Top node */
+    void*            p,          /* I - Pointer to data */
+    mxml_load_cb_t  cb,          /* I - Callback function or MXML_NO_CALLBACK */
+    _mxml_getc_cb_t getc_cb,     /* I - Read function */
+    mxml_sax_cb_t   sax_cb,      /* I - SAX callback or MXML_NO_CALLBACK */
+    void*           sax_data,    /* I - SAX user data */
+    int         xml_encoding ) { /* I - Source file encoding */
     mxml_node_t*   node,          /* Current node */
                    *first,         /* First node added */
                    *parent;        /* Current parent node */
@@ -1441,7 +1468,7 @@ mxml_load_data(
     parent     = top;
     first      = NULL;
     whitespace = 0;
-    encoding   = ENCODE_UTF8;
+    encoding   = xml_encoding;
 
     if (cb && parent) {
         type = (*cb)(parent);
@@ -1451,7 +1478,7 @@ mxml_load_data(
 
     while ((ch = (*getc_cb)(p, &encoding)) != EOF) {
         if ((ch == '<' ||
-                (mxml_isspace(ch) && type != MXML_OPAQUE && type != MXML_CUSTOM)) &&
+                (mxml_isspace(ch) && type != MXML_OPAQUE && type != MXML_CUSTOM && type != MXML_TEXT)) &&
                 bufptr > buffer) {
             /*
              * Add a new value node...
@@ -1538,6 +1565,11 @@ mxml_load_data(
             whitespace = 1;
         }
 
+        // Add space in the text, because it is passed without this
+        if(ch == ' ' && encoding == ENCODE_CP866) {
+            mxml_add_char(ch, &bufptr, &buffer, &bufsize, encoding);
+        }
+
         /*
          * Add lone whitespace node if we have an element and existing
          * whitespace...
@@ -1581,10 +1613,10 @@ mxml_load_data(
                         goto error;
                     }
 
-                    if (mxml_add_char(ch, &bufptr, &buffer, &bufsize)) {
+                    if (mxml_add_char(ch, &bufptr, &buffer, &bufsize, encoding)) {
                         goto error;
                     }
-                } else if (mxml_add_char(ch, &bufptr, &buffer, &bufsize)) {
+                } else if (mxml_add_char(ch, &bufptr, &buffer, &bufsize, encoding)) {
                     goto error;
                 } else if (((bufptr - buffer) == 1 && buffer[0] == '?') ||
                            ((bufptr - buffer) == 3 && !strncmp(buffer, "!--", 3)) ||
@@ -1603,7 +1635,7 @@ mxml_load_data(
                     if (ch == '>' && bufptr > (buffer + 4) &&
                             bufptr[-3] != '-' && bufptr[-2] == '-' && bufptr[-1] == '-') {
                         break;
-                    } else if (mxml_add_char(ch, &bufptr, &buffer, &bufsize)) {
+                    } else if (mxml_add_char(ch, &bufptr, &buffer, &bufsize, encoding)) {
                         goto error;
                     }
                 }
@@ -1667,7 +1699,7 @@ mxml_load_data(
                 while ((ch = (*getc_cb)(p, &encoding)) != EOF) {
                     if (ch == '>' && !strncmp(bufptr - 2, "]]", 2)) {
                         break;
-                    } else if (mxml_add_char(ch, &bufptr, &buffer, &bufsize)) {
+                    } else if (mxml_add_char(ch, &bufptr, &buffer, &bufsize, encoding)) {
                         goto error;
                     }
                 }
@@ -1731,7 +1763,7 @@ mxml_load_data(
                 while ((ch = (*getc_cb)(p, &encoding)) != EOF) {
                     if (ch == '>' && bufptr > buffer && bufptr[-1] == '?') {
                         break;
-                    } else if (mxml_add_char(ch, &bufptr, &buffer, &bufsize)) {
+                    } else if (mxml_add_char(ch, &bufptr, &buffer, &bufsize, encoding)) {
                         goto error;
                     }
                 }
@@ -1810,7 +1842,7 @@ mxml_load_data(
                                 goto error;
                             }
 
-                        if (mxml_add_char(ch, &bufptr, &buffer, &bufsize)) {
+                        if (mxml_add_char(ch, &bufptr, &buffer, &bufsize, encoding)) {
                             goto error;
                         }
                     }
@@ -1998,7 +2030,7 @@ mxml_load_data(
                 goto error;
             }
 
-            if (mxml_add_char(ch, &bufptr, &buffer, &bufsize)) {
+            if (mxml_add_char(ch, &bufptr, &buffer, &bufsize, encoding)) {
                 goto error;
             }
         } else if (type == MXML_OPAQUE || type == MXML_CUSTOM || !mxml_isspace(ch)) {
@@ -2006,7 +2038,7 @@ mxml_load_data(
              * Add character to current buffer...
              */
 
-            if (mxml_add_char(ch, &bufptr, &buffer, &bufsize)) {
+            if (mxml_add_char(ch, &bufptr, &buffer, &bufsize, encoding)) {
                 goto error;
             }
         }
@@ -2160,7 +2192,7 @@ mxml_parse_element(
                         goto error;
                     }
 
-                if (mxml_add_char(ch, &ptr, &name, &namesize)) {
+                if (mxml_add_char(ch, &ptr, &name, &namesize, encoding)) {
                     goto error;
                 }
 
@@ -2183,7 +2215,7 @@ mxml_parse_element(
                             goto error;
                         }
 
-                    if (mxml_add_char(ch, &ptr, &name, &namesize)) {
+                    if (mxml_add_char(ch, &ptr, &name, &namesize, encoding)) {
                         goto error;
                     }
                 }
@@ -2229,7 +2261,7 @@ mxml_parse_element(
                                 goto error;
                             }
 
-                        if (mxml_add_char(ch, &ptr, &value, &valsize)) {
+                        if (mxml_add_char(ch, &ptr, &value, &valsize, encoding)) {
                             goto error;
                         }
                     }
@@ -2252,7 +2284,7 @@ mxml_parse_element(
                                 goto error;
                             }
 
-                        if (mxml_add_char(ch, &ptr, &value, &valsize)) {
+                        if (mxml_add_char(ch, &ptr, &value, &valsize, encoding)) {
                             goto error;
                         }
                     }
