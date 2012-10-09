@@ -1,5 +1,5 @@
 /*
- * "$Id$"
+ * "$Id: config.h 408 2010-09-19 05:26:46Z mike $"
  *
  * Configuration file for Mini-XML, a small XML-like file parsing library.
  *
@@ -119,5 +119,5 @@ extern int	_mxml_vsnprintf(char *, size_t, const char *, va_list);
 #  endif /* !HAVE_VSNPRINTF */
 
 /*
- * End of "$Id$".
+ * End of "$Id: config.h 408 2010-09-19 05:26:46Z mike $".
  */

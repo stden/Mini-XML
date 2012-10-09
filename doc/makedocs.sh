@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# "$Id$"
+# "$Id: makedocs.sh 408 2010-09-19 05:26:46Z mike $"
 #
 # Script to make documentation...
 #
@@ -24,5 +24,5 @@ mkdir mxml.d
 htmldoc --verbose --batch mxml.book --no-title -t html -d mxml.d
 
 #
-# End of "$Id$".
+# End of "$Id: makedocs.sh 408 2010-09-19 05:26:46Z mike $".
 #
